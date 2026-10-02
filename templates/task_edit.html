@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>タスクを編集 | {{ task.name }}</title>
+    <style>
+        :root {
+            --ink: #202923;
+            --muted: #68756d;
+            --line: #dce5de;
+            --paper: #f3f7f3;
+            --surface: #ffffff;
+            --green: #176b4a;
+            --orange: #c85d37;
+            --orange-soft: #fff0e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: "BIZ UDPGothic", "Noto Sans JP", sans-serif;
+            line-height: 1.55;
+        }
+
+        header { min-height: 66px; display: flex; align-items: center; border-bottom: 1px solid var(--line); background: var(--surface); }
+        .header-inner, main { width: min(820px, calc(100% - 40px)); margin: 0 auto; }
+        .header-inner { display: flex; align-items: center; justify-content: space-between; }
+        .brand, .back-link { text-decoration: none; }
+        .brand { color: var(--ink); font-size: 15px; font-weight: 700; }
+        .back-link { color: var(--green); font-size: 13px; font-weight: 700; }
+        main { padding: 38px 0 56px; }
+        .eyebrow { margin: 0 0 5px; color: var(--green); font-size: 12px; font-weight: 700; }
+        h1 { margin: 0 0 22px; font-size: 26px; }
+        .form-sheet { border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+        form { padding: 22px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 18px; }
+        .field { min-width: 0; }
+        .field-wide { grid-column: 1 / -1; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+        .required { color: var(--orange); }
+        input, select, textarea { width: 100%; min-height: 42px; border: 1px solid #cbd7cd; border-radius: 5px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; padding: 9px 11px; }
+        textarea { min-height: 96px; resize: vertical; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #85bba0; outline-offset: 1px; }
+        .alert { margin-bottom: 17px; border-left: 3px solid var(--orange); background: var(--orange-soft); color: #7f321a; padding: 12px 15px; font-size: 14px; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+        button, .cancel { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 5px; font: inherit; font-size: 14px; font-weight: 700; padding: 0 17px; text-decoration: none; cursor: pointer; }
+        button { background: var(--green); color: #fff; }
+        button:hover { background: #10583c; }
+        .cancel { border: 1px solid var(--line); background: #fff; color: var(--ink); }
+
+        @media (max-width: 560px) {
+            .header-inner, main { width: calc(100% - 28px); }
+            main { padding-top: 28px; }
+            h1 { font-size: 23px; }
+            form { padding: 16px; }
+        }
+
+        @media (max-width: 400px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .field-wide { grid-column: auto; }
+            .form-actions { flex-direction: column-reverse; }
+            .form-actions button, .form-actions .cancel { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <a class="brand" href="{{ url_for('index') }}">ワークスペース</a>
+            <a class="back-link" href="{{ url_for('task_detail', task_id=task.id) }}">詳細へ戻る</a>
+        </div>
+    </header>
+    <main>
+        <p class="eyebrow">EDIT TASK</p>
+        <h1>タスクを編集</h1>
+        {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
+        <section class="form-sheet" aria-label="タスク編集フォーム">
+            <form method="post">
+                <div class="form-grid">
+                    <div class="field field-wide">
+                        <label for="name">タスク名 <span class="required">*</span></label>
+                        <input id="name" name="name" type="text" maxlength="200" value="{{ values.name }}" required>
+                    </div>
+                    <div class="field field-wide">
+                        <label for="detail">タスク詳細</label>
+                        <textarea id="detail" name="detail">{{ values.detail }}</textarea>
+                    </div>
+                    <div class="field">
+                        <label for="assignee">担当者 <span class="required">*</span></label>
+                        <input id="assignee" name="assignee" type="text" maxlength="100" value="{{ values.assignee }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="priority">優先度 <span class="required">*</span></label>
+                        <select id="priority" name="priority" required>
+                            {% for priority in priorities %}<option value="{{ priority }}" {% if values.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="status">ステータス <span class="required">*</span></label>
+                        <select id="status" name="status" required>
+                            {% for status in statuses %}<option value="{{ status }}" {% if values.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="due_date">期限日 <span class="required">*</span></label>
+                        <input id="due_date" name="due_date" type="date" value="{{ values.due_date }}" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a class="cancel" href="{{ url_for('task_detail', task_id=task.id) }}">キャンセル</a>
+                    <button type="submit">変更を保存</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ task.name }} | タスク詳細</title>
+    <style>
+        :root {
+            --ink: #202923;
+            --muted: #68756d;
+            --line: #dce5de;
+            --paper: #f3f7f3;
+            --surface: #ffffff;
+            --green: #176b4a;
+            --green-soft: #e6f2eb;
+            --orange-soft: #fff0e8;
+            --orange: #a34425;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: "BIZ UDPGothic", "Noto Sans JP", sans-serif;
+            line-height: 1.6;
+        }
+
+        header {
+            min-height: 66px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .header-inner, main { width: min(820px, calc(100% - 40px)); margin: 0 auto; }
+        .header-inner { display: flex; align-items: center; justify-content: space-between; }
+        .brand { color: var(--ink); font-size: 15px; font-weight: 700; text-decoration: none; }
+        .back-link { color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        main { padding: 42px 0 60px; }
+        .eyebrow { margin: 0 0 6px; color: var(--green); font-size: 12px; font-weight: 700; }
+        h1 { margin: 0; overflow-wrap: anywhere; font-size: 28px; line-height: 1.4; }
+        .title-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+        .title-actions { display: flex; align-items: center; gap: 10px; }
+        .pill { flex: 0 0 auto; border-radius: 4px; background: var(--green-soft); color: var(--green); padding: 4px 10px; font-size: 13px; white-space: nowrap; }
+        .edit-link { display: inline-flex; min-height: 38px; align-items: center; border-radius: 5px; background: var(--green); color: #fff; padding: 0 13px; font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+        .edit-link:hover { background: #10583c; }
+        .delete-form { margin: 0; }
+        .delete-button { min-height: 38px; border: 1px solid #e2b5a4; border-radius: 5px; background: #fff; color: #a34425; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .delete-button:hover { background: var(--orange-soft); }
+        .detail-sheet { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
+        .detail-text { padding: 22px 24px; border-bottom: 1px solid var(--line); }
+        .detail-text h2 { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+        .detail-text p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+        .meta-item { min-width: 0; padding: 18px 24px; border-bottom: 1px solid #e8eee9; }
+        .meta-item:nth-child(odd) { border-right: 1px solid #e8eee9; }
+        .meta-item:nth-last-child(-n + 2) { border-bottom: 0; }
+        dt { margin-bottom: 5px; color: var(--muted); font-size: 12px; }
+        dd { margin: 0; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+        .priority-high { background: var(--orange-soft); color: var(--orange); }
+        .comments-section { margin-top: 30px; }
+        .comments-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+        .comments-header h2 { margin: 0; font-size: 18px; }
+        .comments-count, .comment-time { color: var(--muted); font-size: 12px; }
+        .comment-form { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+        .comment-form label { font-size: 13px; font-weight: 700; }
+        .comment-form textarea { width: 100%; min-height: 92px; border: 1px solid #cbd7cd; border-radius: 5px; padding: 10px 11px; color: var(--ink); font: inherit; font-size: 14px; resize: vertical; }
+        .comment-form textarea:focus { outline: 2px solid #85bba0; outline-offset: 1px; }
+        .comment-form button { justify-self: end; min-height: 40px; border: 0; border-radius: 5px; background: var(--green); color: #fff; padding: 0 15px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .comment-form button:hover { background: #10583c; }
+        .comment-error { margin: 0; color: var(--orange); font-size: 13px; }
+        .comment-list { margin-top: 12px; }
+        .comment-entry { padding: 16px 2px; border-bottom: 1px solid var(--line); }
+        .comment-entry:first-child { border-top: 1px solid var(--line); }
+        .comment-entry time { display: block; margin-bottom: 6px; }
+        .comment-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+        .comments-empty { margin: 0; padding: 20px 2px; color: var(--muted); font-size: 13px; }
+
+        @media (max-width: 560px) {
+            .header-inner, main { width: calc(100% - 28px); }
+            main { padding-top: 28px; }
+            h1 { font-size: 23px; }
+            .title-row { align-items: flex-start; }
+            .detail-text, .meta-item { padding: 15px 16px; }
+        }
+
+        @media (max-width: 380px) {
+            .meta-grid { grid-template-columns: 1fr; }
+            .meta-item:nth-child(odd) { border-right: 0; }
+            .meta-item:nth-last-child(2) { border-bottom: 1px solid #e8eee9; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <a class="brand" href="{{ url_for('index') }}">ワークスペース</a>
+            <a class="back-link" href="{{ url_for('index') }}">← タスク一覧へ</a>
+        </div>
+    </header>
+    <main>
+        <p class="eyebrow">TASK DETAIL</p>
+        <div class="title-row">
+            <h1>{{ task.name }}</h1>
+            <div class="title-actions">
+                <span class="pill">{{ task.status }}</span>
+                <a class="edit-link" href="{{ url_for('edit_task', task_id=task.id) }}">編集</a>
+                <form class="delete-form" method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('このタスクを削除します。よろしいですか？');">
+                    <button class="delete-button" type="submit">削除</button>
+                </form>
+            </div>
+        </div>
+        <section class="detail-sheet" aria-label="タスク詳細">
+            <div class="detail-text">
+                <h2>タスク詳細</h2>
+                <p>{{ task.detail or "詳細は登録されていません。" }}</p>
+            </div>
+            <dl class="meta-grid">
+                <div class="meta-item">
+                    <dt>担当者</dt>
+                    <dd>{{ task.assignee }}</dd>
+                </div>
+                <div class="meta-item">
+                    <dt>優先度</dt>
+                    <dd><span class="pill {% if task.priority == '高' %}priority-high{% endif %}">{{ task.priority }}</span></dd>
+                </div>
+                <div class="meta-item">
+                    <dt>期限日</dt>
+                    <dd>{{ task.due_date }}</dd>
+                </div>
+                <div class="meta-item">
+                    <dt>作成日</dt>
+                    <dd title="{{ task.created_at }}">{{ task.created_at[:16] }}</dd>
+                </div>
+                <div class="meta-item">
+                    <dt>更新日</dt>
+                    <dd title="{{ task.updated_at }}">{{ task.updated_at[:16] }}</dd>
+                </div>
+                <div class="meta-item">
+                    <dt>完了日時</dt>
+                    <dd title="{{ task.completed_at or '' }}">{{ task.completed_at[:16] if task.completed_at else "未完了" }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="comments-section" id="comments" aria-labelledby="comments-heading">
+            <div class="comments-header">
+                <h2 id="comments-heading">コメント・作業メモ</h2>
+                <span class="comments-count">{{ comments|length }}件</span>
+            </div>
+            <form class="comment-form" method="post" action="{{ url_for('add_task_comment', task_id=task.id) }}">
+                <label for="comment-body">作業報告、引継ぎ、課題、備忘録など</label>
+                <textarea id="comment-body" name="body" placeholder="タスクに関するコメントを入力" required>{{ comment_value }}</textarea>
+                {% if comment_error %}<p class="comment-error" role="alert">{{ comment_error }}</p>{% endif %}
+                <button type="submit">コメントを追加</button>
+            </form>
+            {% if comments %}
+                <div class="comment-list" aria-label="コメント履歴">
+                    {% for comment in comments %}
+                    <article class="comment-entry">
+                        <time class="comment-time" datetime="{{ comment.created_at }}">{{ comment.created_at[:16] }}</time>
+                        <p class="comment-body">{{ comment.body }}</p>
+                    </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="comments-empty">コメントはまだありません。</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

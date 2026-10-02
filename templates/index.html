@@ -2,33 +2,411 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>AI上司アプリ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>タスク管理</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #202923;
+            --muted: #68756d;
+            --line: #dce5de;
+            --paper: #f3f7f3;
+            --surface: #ffffff;
+            --green: #176b4a;
+            --green-soft: #e6f2eb;
+            --orange: #c85d37;
+            --orange-soft: #fff0e8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: "BIZ UDPGothic", "Noto Sans JP", sans-serif;
+            line-height: 1.55;
+        }
+
+        .topbar {
+            min-height: 66px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .topbar-inner, main {
+            width: min(1080px, calc(100% - 40px));
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .brand-mark {
+            width: 26px;
+            height: 26px;
+            display: grid;
+            place-items: center;
+            border-radius: 6px;
+            background: var(--green);
+            color: white;
+            font-size: 15px;
+        }
+
+        main { padding: 38px 0 56px; }
+
+        .page-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 26px;
+        }
+
+        .eyebrow {
+            margin: 0 0 5px;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        h1, h2, p { margin-top: 0; }
+        h1 { margin-bottom: 0; font-size: 28px; }
+        h2 { margin-bottom: 4px; font-size: 18px; }
+        .subheading, .section-note { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+
+        .task-count {
+            display: flex;
+            align-items: baseline;
+            gap: 7px;
+            white-space: nowrap;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .task-count strong { color: var(--ink); font-size: 22px; }
+        .dashboard { margin-bottom: 22px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+        .metric { min-width: 0; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); border-left: 3px solid var(--green); border-radius: 6px; background: var(--surface); padding: 13px 15px; }
+        .metric:nth-child(2) { border-left-color: #819087; }
+        .metric:nth-child(3) { border-left-color: var(--orange); }
+        .metric:nth-child(4) { border-left-color: var(--green); }
+        .metric:nth-child(5) { border-left-color: #6d8278; }
+        .metric-label { color: var(--muted); font-size: 12px; font-weight: 700; }
+        .metric strong { color: var(--ink); font-size: 23px; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+
+        .section {
+            margin-bottom: 22px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: var(--surface);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 19px 22px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section-body { padding: 22px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px 18px;
+        }
+
+        .field { min-width: 0; }
+        .field-wide { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .required { color: var(--orange); }
+
+        input, select, textarea {
+            width: 100%;
+            min-height: 42px;
+            border: 1px solid #cbd7cd;
+            border-radius: 5px;
+            background: #fff;
+            color: var(--ink);
+            font: inherit;
+            font-size: 14px;
+            padding: 9px 11px;
+        }
+
+        textarea { min-height: 76px; resize: vertical; }
+        input:focus, select:focus, textarea:focus { outline: 2px solid #85bba0; outline-offset: 1px; }
+
+        .form-actions { display: flex; justify-content: flex-end; margin-top: 19px; }
+
+        button {
+            min-height: 42px;
+            border: 0;
+            border-radius: 5px;
+            background: var(--green);
+            color: #fff;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 0 18px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #10583c; }
+
+        .alert {
+            margin-bottom: 18px;
+            border-left: 3px solid var(--orange);
+            background: var(--orange-soft);
+            color: #7f321a;
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 13px 18px; border-bottom: 1px solid #e8eee9; vertical-align: top; }
+        th { background: #f8faf8; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+        td { font-size: 13px; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .task-name { min-width: 170px; font-weight: 700; }
+        .task-link { color: var(--green); text-decoration: none; }
+        .task-link:hover { text-decoration: underline; }
+        .task-link:focus-visible { outline: 2px solid #85bba0; outline-offset: 2px; }
+        .task-detail { display: block; max-width: 320px; margin-top: 3px; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
+        .pill { display: inline-block; border-radius: 4px; background: var(--green-soft); color: var(--green); padding: 3px 8px; white-space: nowrap; font-size: 12px; }
+        .priority-high { background: var(--orange-soft); color: #a34425; }
+        .empty-state { padding: 42px 20px; color: var(--muted); text-align: center; }
+        .empty-state strong { display: block; margin-bottom: 5px; color: var(--ink); font-size: 15px; }
+        .empty-state a { display: inline-block; margin-top: 10px; color: var(--green); font-size: 13px; }
+        .search-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: 12px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+        .search-field { min-width: 0; }
+        .search-field label { font-size: 12px; }
+        .search-date-field, .sort-field { grid-column: span 2; }
+        .sort-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .date-range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 5px; }
+        .date-range input { min-width: 0; padding-right: 6px; padding-left: 6px; }
+        .date-range span { color: var(--muted); font-size: 12px; }
+        .search-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+        .search-actions button { min-height: 42px; padding: 0 15px; }
+        .search-reset { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+        details { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 17px; }
+        summary { width: fit-content; color: var(--muted); font-size: 13px; cursor: pointer; }
+        .ai-form { display: flex; align-items: start; gap: 10px; margin-top: 14px; }
+        .ai-form textarea { min-height: 42px; }
+        .ai-form button { flex: 0 0 auto; }
+        .comment { margin: 14px 0 0; border-left: 3px solid var(--green); background: var(--green-soft); padding: 12px 15px; white-space: pre-wrap; }
+
+        @media (max-width: 700px) {
+            .topbar-inner, main { width: min(100% - 28px, 560px); }
+            main { padding-top: 28px; }
+            .page-heading { align-items: start; }
+            h1 { font-size: 24px; }
+            .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .section-header, .section-body { padding-left: 16px; padding-right: 16px; }
+            .dashboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+            .metric { padding: 12px; }
+            .search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
+            .search-date-field, .sort-field, .search-actions { grid-column: 1 / -1; }
+            th, td { padding: 11px 13px; }
+        }
+
+        @media (max-width: 440px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .field-wide { grid-column: auto; }
+            .page-heading { flex-direction: column; gap: 10px; }
+            .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .search-form { grid-template-columns: 1fr; }
+            .search-date-field, .sort-field, .search-actions { grid-column: auto; }
+            .ai-form { flex-direction: column; }
+            .ai-form button { width: 100%; }
+        }
+    </style>
 </head>
 <body>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand"><span class="brand-mark" aria-hidden="true">✓</span>ワークスペース</div>
+        </div>
+    </header>
 
-    <h1>AI上司アプリ</h1>
+    <main>
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">TASK MANAGEMENT</p>
+                <h1>タスク</h1>
+                <p class="subheading">タスクを登録して、期限と進捗を管理します。</p>
+            </div>
+            <div class="task-count"><strong>{{ tasks|length }}</strong>件のタスク</div>
+        </div>
 
-    <form method="post">
+        {% if error %}<div class="alert" role="alert">{{ error }}</div>{% endif %}
 
-        <p>完了したタスク</p>
+        <section class="dashboard" aria-label="タスク状況">
+            <div class="dashboard-grid">
+                <div class="metric"><span class="metric-label">総タスク数</span><strong data-metric="total">{{ dashboard.total }}</strong></div>
+                <div class="metric"><span class="metric-label">未着手</span><strong data-metric="not-started">{{ dashboard.statuses['未着手'] }}</strong></div>
+                <div class="metric"><span class="metric-label">進行中</span><strong data-metric="in-progress">{{ dashboard.statuses['進行中'] }}</strong></div>
+                <div class="metric"><span class="metric-label">完了</span><strong data-metric="completed">{{ dashboard.statuses['完了'] }}</strong></div>
+                <div class="metric"><span class="metric-label">保留</span><strong data-metric="on-hold">{{ dashboard.statuses['保留'] }}</strong></div>
+            </div>
+        </section>
 
-        <input
-            type="text"
-            name="task"
-            size="50"
-            required>
+        <section class="section" aria-labelledby="create-heading">
+            <div class="section-header">
+                <div>
+                    <h2 id="create-heading">タスクを登録</h2>
+                    <p class="section-note">必須項目を入力してください。</p>
+                </div>
+            </div>
+            <div class="section-body">
+                <form method="post">
+                    <input type="hidden" name="action" value="create">
+                    <div class="form-grid">
+                        <div class="field field-wide">
+                            <label for="name">タスク名 <span class="required">*</span></label>
+                            <input id="name" name="name" type="text" maxlength="200" placeholder="例: 週次レポートを作成" required>
+                        </div>
+                        <div class="field field-wide">
+                            <label for="detail">タスク詳細</label>
+                            <textarea id="detail" name="detail" placeholder="作業内容や補足を入力"></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="due_date">期限日 <span class="required">*</span></label>
+                            <input id="due_date" name="due_date" type="date" required>
+                        </div>
+                        <div class="field">
+                            <label for="priority">優先度 <span class="required">*</span></label>
+                            <select id="priority" name="priority" required>
+                                {% for priority in priorities %}<option value="{{ priority }}" {% if priority == '中' %}selected{% endif %}>{{ priority }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="assignee">担当者 <span class="required">*</span></label>
+                            <input id="assignee" name="assignee" type="text" maxlength="100" placeholder="担当者名" required>
+                        </div>
+                        <div class="field">
+                            <label for="status">ステータス <span class="required">*</span></label>
+                            <select id="status" name="status" required>
+                                {% for status in statuses %}<option value="{{ status }}">{{ status }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions"><button type="submit">＋　タスクを登録</button></div>
+                </form>
+            </div>
+        </section>
 
-        <button type="submit">
-            完了
-        </button>
+        <section class="section" aria-labelledby="list-heading">
+            <div class="section-header">
+                <div>
+                    <h2 id="list-heading">タスク一覧</h2>
+                    <p class="section-note">検索条件と並び順を指定できます。</p>
+                </div>
+            </div>
+            <form class="search-form" method="get" action="{{ url_for('index') }}" role="search" aria-label="タスク検索">
+                <div class="search-field">
+                    <label for="filter-name">タスク名</label>
+                    <input id="filter-name" name="name" type="search" value="{{ filters.name }}" placeholder="タスク名で検索">
+                </div>
+                <div class="search-field">
+                    <label for="filter-assignee">担当者</label>
+                    <input id="filter-assignee" name="assignee" type="search" value="{{ filters.assignee }}" placeholder="担当者で検索">
+                </div>
+                <div class="search-field">
+                    <label for="filter-status">ステータス</label>
+                    <select id="filter-status" name="status">
+                        <option value="">すべて</option>
+                        {% for status in statuses %}<option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="search-field">
+                    <label for="filter-priority">優先度</label>
+                    <select id="filter-priority" name="priority">
+                        <option value="">すべて</option>
+                        {% for priority in priorities %}<option value="{{ priority }}" {% if filters.priority == priority %}selected{% endif %}>{{ priority }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="search-field search-date-field">
+                    <label for="filter-due-from">期限日</label>
+                    <div class="date-range">
+                        <input id="filter-due-from" name="due_from" type="date" value="{{ filters.due_from }}" aria-label="期限日（開始）">
+                        <span aria-hidden="true">〜</span>
+                        <input id="filter-due-to" name="due_to" type="date" value="{{ filters.due_to }}" aria-label="期限日（終了）">
+                    </div>
+                </div>
+                <div class="search-field sort-field">
+                    <label for="sort-by">並び替え</label>
+                    <div class="sort-controls">
+                        <select id="sort-by" name="sort_by">
+                            {% for value, label in sort_options %}<option value="{{ value }}" {% if sort_by == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </select>
+                        <select name="sort_order" aria-label="並び順">
+                            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>昇順</option>
+                            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>降順</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="search-actions">
+                    <button type="submit">検索</button>
+                    <a class="search-reset" href="{{ url_for('index') }}">解除</a>
+                </div>
+            </form>
+            {% if tasks %}
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>タスク</th><th>担当者</th><th>優先度</th><th>ステータス</th><th>期限日</th><th>作成日</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td class="task-name"><a class="task-link" href="{{ url_for('task_detail', task_id=task.id) }}">{{ task.name }}</a>{% if task.detail %}<span class="task-detail">{{ task.detail }}</span>{% endif %}</td>
+                                <td>{{ task.assignee }}</td>
+                                <td><span class="pill {% if task.priority == '高' %}priority-high{% endif %}">{{ task.priority }}</span></td>
+                                <td><span class="pill">{{ task.status }}</span></td>
+                                <td>{{ task.due_date }}</td>
+                                <td title="{{ task.created_at }}">{{ task.created_at[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                {% if filters.name or filters.assignee or filters.status or filters.priority or filters.due_from or filters.due_to %}
+                    <div class="empty-state"><strong>検索条件に一致するタスクはありません</strong><a href="{{ url_for('index') }}">検索条件をクリア</a></div>
+                {% else %}
+                    <div class="empty-state"><strong>タスクはまだありません</strong>最初のタスクを登録してください。</div>
+                {% endif %}
+            {% endif %}
+        </section>
 
-    </form>
-
-    <hr>
-
-    <h2>AIコメント</h2>
-
-    <p>{{ comment }}</p>
-
+        <details>
+            <summary>AI上司コメント</summary>
+            <form class="ai-form" method="post">
+                <input type="hidden" name="action" value="comment">
+                <textarea name="task" aria-label="完了したタスク" placeholder="完了したタスクを入力" required></textarea>
+                <button type="submit">コメントを生成</button>
+            </form>
+            {% if comment %}<p class="comment">{{ comment }}</p>{% endif %}
+        </details>
+    </main>
 </body>
 </html>
