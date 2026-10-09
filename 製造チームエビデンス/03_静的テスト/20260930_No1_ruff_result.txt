@@ -1,0 +1,40 @@
+UP012 [*] Unnecessary call to `encode` as UTF-8
+   --> test_app.py:430:23
+    |
+428 |         self.client.post("/tasks/1/comments", data={"body": "削除時に一緒に消える"})
+429 |         detail_page = self.client.get("/tasks/1")
+430 |         self.assertIn("confirm(".encode(), detail_page.data)
+    |                       ^^^^^^^^^^^^^^^^^^^
+431 |         self.assertEqual(self.client.get("/tasks/1/delete").status_code, 405)
+    |
+help: Rewrite as bytes literal
+    |
+429 |         detail_page = self.client.get("/tasks/1")
+    -         self.assertIn("confirm(".encode(), detail_page.data)
+430 +         self.assertIn(b"confirm(", detail_page.data)
+431 |         self.assertEqual(self.client.get("/tasks/1/delete").status_code, 405)
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> test_gemini.py:1:1
+  |
+1 | / from google import genai
+2 | | import sys
+3 | | import os
+  | |_________^
+4 |
+5 |   client = genai.Client(
+  |
+help: Organize imports
+  |
+  - from google import genai
+  - import sys
+1 | import os
+2 + import sys
+3 +
+4 + from google import genai
+5 |
+  |
+
+Found 2 errors.
+[*] 2 fixable with the `--fix` option.

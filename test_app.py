@@ -427,7 +427,7 @@ class TaskRegistrationTest(unittest.TestCase):
         )
         self.client.post("/tasks/1/comments", data={"body": "削除時に一緒に消える"})
         detail_page = self.client.get("/tasks/1")
-        self.assertIn("confirm(".encode(), detail_page.data)
+        self.assertIn(b"confirm(", detail_page.data)
         self.assertEqual(self.client.get("/tasks/1/delete").status_code, 405)
 
         response = self.client.post("/tasks/1/delete")
